@@ -646,5 +646,44 @@ function handleMockRequest(config?: InternalAxiosRequestConfig): AxiosResponse |
     }
   }
 
+  // Database status & configuration mock fallback
+  if (url.includes('/db/status') || url.includes('/db-status')) {
+    return wrapResponse({
+      type: 'MongoDB',
+      connected: false,
+      readyState: 0,
+      statusText: 'Disconnected (In-Memory Active)',
+      uri: 'mongodb://127.0.0.1:27017/hospital_management',
+      database: 'hospital_management',
+      collections: {
+        patients: mockDb.patients().length,
+        doctors: mockDb.doctors().length,
+        departments: mockDb.departments().length,
+        appointments: mockDb.appointments().length,
+      },
+      lastError: null,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  if (url.includes('/db/connect') || url.includes('/db/seed')) {
+    return wrapResponse({
+      type: 'MongoDB',
+      connected: false,
+      readyState: 0,
+      statusText: 'Disconnected (In-Memory Active)',
+      uri: data.uri || 'mongodb://127.0.0.1:27017/hospital_management',
+      database: 'hospital_management',
+      collections: {
+        patients: mockDb.patients().length,
+        doctors: mockDb.doctors().length,
+        departments: mockDb.departments().length,
+        appointments: mockDb.appointments().length,
+      },
+      lastError: null,
+      timestamp: new Date().toISOString(),
+    }, 'Database operation completed');
+  }
+
   return wrapResponse([], 'Success');
 }

@@ -57,11 +57,14 @@ export function useDashboardStatistics() {
 
 // Patients
 export function usePatients(params?: { search?: string }) {
-  return useQuery({
+  return useQuery<Patient[]>({
     queryKey: [...QUERY_KEYS.patients, params],
-    queryFn: async () => {
+    queryFn: async (): Promise<Patient[]> => {
       const res = await patientApi.getAll(params);
-      return res.data;
+      if (Array.isArray(res?.data)) return res.data as Patient[];
+      if (Array.isArray((res?.data as any)?.items)) return (res.data as any).items as Patient[];
+      if (Array.isArray((res?.data as any)?.patients)) return (res.data as any).patients as Patient[];
+      return [];
     },
   });
 }

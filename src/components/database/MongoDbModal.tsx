@@ -22,11 +22,13 @@ export const MongoDbModal: React.FC<MongoDbModalProps> = ({ isOpen, onClose, onS
     setLoading(true);
     try {
       const res = await dbApi.getStatus();
-      setStatus(res.data);
-      if (res.data.uri && !customUri) {
-        setCustomUri(res.data.uri);
+      if (res?.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+        setStatus(res.data);
+        if (res.data.uri && !customUri) {
+          setCustomUri(res.data.uri);
+        }
+        onStatusChange?.(res.data);
       }
-      onStatusChange?.(res.data);
     } catch {
       // Fallback
     } finally {
@@ -50,8 +52,10 @@ export const MongoDbModal: React.FC<MongoDbModalProps> = ({ isOpen, onClose, onS
     setConnecting(true);
     try {
       const res = await dbApi.connect(customUri.trim());
-      setStatus(res.data);
-      onStatusChange?.(res.data);
+      if (res?.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+        setStatus(res.data);
+        onStatusChange?.(res.data);
+      }
       if (res.success) {
         toast.success('Successfully connected to MongoDB database!');
       } else {
@@ -129,7 +133,7 @@ export const MongoDbModal: React.FC<MongoDbModalProps> = ({ isOpen, onClose, onS
               <span>Patients</span>
             </div>
             <p className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
-              {status?.collections.patients ?? '—'}
+              {status?.collections?.patients ?? '—'}
             </p>
           </div>
 
@@ -139,7 +143,7 @@ export const MongoDbModal: React.FC<MongoDbModalProps> = ({ isOpen, onClose, onS
               <span>Doctors</span>
             </div>
             <p className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
-              {status?.collections.doctors ?? '—'}
+              {status?.collections?.doctors ?? '—'}
             </p>
           </div>
 
@@ -149,7 +153,7 @@ export const MongoDbModal: React.FC<MongoDbModalProps> = ({ isOpen, onClose, onS
               <span>Appointments</span>
             </div>
             <p className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
-              {status?.collections.appointments ?? '—'}
+              {status?.collections?.appointments ?? '—'}
             </p>
           </div>
         </div>

@@ -1,15 +1,20 @@
 import React, { useId } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Label } from './Label';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  errorMessage?: string;
   hint?: string;
   icon?: React.ReactNode;
   'aria-invalid'?: boolean | 'false' | 'true' | 'grammar' | 'spelling';
+  ariaInvalid?: boolean | 'false' | 'true' | 'grammar' | 'spelling';
   'aria-describedby'?: string;
+  ariaDescribedBy?: string;
   'aria-errormessage'?: string;
+  ariaErrorMessage?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -18,14 +23,18 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       className,
       label,
       error,
+      errorMessage,
       hint,
       icon,
       id,
       name,
       required,
-      'aria-invalid': ariaInvalidProp,
-      'aria-describedby': ariaDescribedByProp,
-      'aria-errormessage': ariaErrorMessageProp,
+      'aria-invalid': ariaInvalidKebab,
+      ariaInvalid: ariaInvalidCamel,
+      'aria-describedby': ariaDescribedByKebab,
+      ariaDescribedBy: ariaDescribedByCamel,
+      'aria-errormessage': ariaErrorMessageKebab,
+      ariaErrorMessage: ariaErrorMessageCamel,
       ...props
     },
     ref
@@ -35,37 +44,41 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
 
-    // WCAG: Determine aria-invalid:
-    // If error exists, aria-invalid evaluates to true unless explicitly overridden
+    // Support both 'error' and 'errorMessage' props
+    const resolvedError = error || errorMessage;
+
+    // Resolve aria-invalid: prefer explicit prop (kebab or camel), otherwise set to 'true' if error exists
+    const explicitAriaInvalid = ariaInvalidKebab !== undefined ? ariaInvalidKebab : ariaInvalidCamel;
     const resolvedAriaInvalid: boolean | 'false' | 'true' | 'grammar' | 'spelling' | undefined =
-      ariaInvalidProp !== undefined
-        ? ariaInvalidProp
-        : error
+      explicitAriaInvalid !== undefined
+        ? explicitAriaInvalid
+        : resolvedError
         ? 'true'
         : undefined;
 
-    // WCAG: Merge describedby IDs:
-    // Link dynamic error message and hint IDs with any custom IDs passed in aria-describedby
-    const customIds = ariaDescribedByProp
-      ? ariaDescribedByProp.split(/\s+/).filter(Boolean)
-      : [];
+    // Resolve custom aria-describedby tokens
+    const explicitDescribedBy = ariaDescribedByKebab || ariaDescribedByCamel || '';
+    const customTokens = explicitDescribedBy ? explicitDescribedBy.split(/\s+/).filter(Boolean) : [];
 
-    const idsToInclude = [
-      ...(error ? [errorId] : []),
+    // Dynamically associate error and hint elements
+    const linkedIds = [
+      ...(resolvedError ? [errorId] : []),
       ...(hint ? [hintId] : []),
-      ...customIds,
+      ...customTokens,
     ];
 
     const resolvedAriaDescribedBy =
-      Array.from(new Set(idsToInclude)).join(' ') || undefined;
+      Array.from(new Set(linkedIds)).join(' ') || undefined;
 
+    // Resolve aria-errormessage: points to error message element when invalid
+    const explicitErrorMessage = ariaErrorMessageKebab || ariaErrorMessageCamel;
     const resolvedAriaErrorMessage =
-      ariaErrorMessageProp || (error ? errorId : undefined);
+      explicitErrorMessage || (resolvedError ? errorId : undefined);
 
     return (
       <div className="w-full space-y-1.5 text-left">
         {label && (
-          <Label htmlFor={inputId} required={required} error={!!error}>
+          <Label htmlFor={inputId} required={required} error={!!resolvedError}>
             {label}
           </Label>
         )}
@@ -91,21 +104,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950',
               icon ? 'pl-9' : '',
-              error
-                ? 'border-rose-300 dark:border-rose-700 focus:ring-rose-500 text-rose-900 dark:text-rose-100'
+              resolvedError
+                ? 'border-rose-400 dark:border-rose-600 focus:ring-rose-500 focus:border-rose-500 text-rose-900 dark:text-rose-100 placeholder:text-rose-300 dark:placeholder:text-rose-700'
                 : 'border-slate-300 dark:border-slate-700',
               className
             )}
           />
         </div>
-        {error && (
+        {resolvedError && (
           <p
             id={errorId}
             role="alert"
             aria-live="polite"
-            className="text-xs text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1 font-medium"
+            aria-atomic="true"
+            className="text-xs text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1.5 font-medium"
           >
-            {error}
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span>{resolvedError}</span>
           </p>
         )}
         {hint && (

@@ -32,7 +32,9 @@ export const Header: React.FC = () => {
 
   React.useEffect(() => {
     dbApi.getStatus().then((res) => {
-      if (res?.data) setDbStatus(res.data);
+      if (res?.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+        setDbStatus(res.data);
+      }
     }).catch(() => {});
   }, []);
 
