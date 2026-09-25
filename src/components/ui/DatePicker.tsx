@@ -21,23 +21,37 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       id,
       name,
       required,
+      'aria-invalid': ariaInvalid,
       'aria-describedby': ariaDescribedBy,
+      'aria-errormessage': ariaErrorMessage,
       ...props
     },
     ref
   ) => {
     const generatedId = useId();
-    const inputId = id || name || generatedId;
+    const inputId = id || (name ? `datepicker-${name}` : generatedId);
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
 
+    // Determine aria-invalid: prefer explicit prop, fallback to true if error exists
+    const resolvedAriaInvalid =
+      ariaInvalid !== undefined
+        ? ariaInvalid
+        : error
+        ? true
+        : undefined;
+
+    // Build describedby IDs: combine error, hint, and any user-provided aria-describedby
     const describedByIds = [
       error ? errorId : null,
-      hint && !error ? hintId : null,
+      hint ? hintId : null,
       ariaDescribedBy || null,
     ]
       .filter(Boolean)
       .join(' ') || undefined;
+
+    const resolvedAriaErrorMessage =
+      ariaErrorMessage || (error ? errorId : undefined);
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -54,14 +68,15 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
             {icon || <CalendarIcon className="w-4 h-4" />}
           </div>
           <input
+            {...props}
             type="date"
             id={inputId}
             name={name}
             ref={ref}
             required={required}
             aria-required={required ? 'true' : undefined}
-            aria-invalid={error ? 'true' : 'false'}
-            aria-errormessage={error ? errorId : undefined}
+            aria-invalid={resolvedAriaInvalid}
+            aria-errormessage={resolvedAriaErrorMessage}
             aria-describedby={describedByIds}
             className={cn(
               'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950 [color-scheme:light] dark:[color-scheme:dark]',
@@ -70,7 +85,6 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
                 : 'border-slate-300 dark:border-slate-700',
               className
             )}
-            {...props}
           />
         </div>
         {error && (
@@ -83,8 +97,8 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
             {error}
           </p>
         )}
-        {hint && !error && (
-          <p id={hintId} className="text-xs text-slate-500 dark:text-slate-400">
+        {hint && (
+          <p id={hintId} className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {hint}
           </p>
         )}
