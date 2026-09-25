@@ -436,11 +436,13 @@ export const PatientDetailPage: React.FC = () => {
       )}
 
       {/* Edit Patient Dialog */}
-      <PatientModal
-        isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        patientToEdit={patient}
-      />
+      {editModalOpen && (
+        <PatientModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          patientToEdit={patient}
+        />
+      )}
     </div>
   );
 };
