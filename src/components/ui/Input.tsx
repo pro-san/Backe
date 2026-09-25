@@ -7,6 +7,9 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   error?: string;
   hint?: string;
   icon?: React.ReactNode;
+  'aria-invalid'?: boolean | 'false' | 'true' | 'grammar' | 'spelling';
+  'aria-describedby'?: string;
+  'aria-errormessage'?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -20,9 +23,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       id,
       name,
       required,
-      'aria-invalid': ariaInvalid,
-      'aria-describedby': ariaDescribedBy,
-      'aria-errormessage': ariaErrorMessage,
+      'aria-invalid': ariaInvalidProp,
+      'aria-describedby': ariaDescribedByProp,
+      'aria-errormessage': ariaErrorMessageProp,
       ...props
     },
     ref
@@ -32,25 +35,32 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
 
-    // Determine aria-invalid: prefer explicit prop, fallback to true if error exists
-    const resolvedAriaInvalid =
-      ariaInvalid !== undefined
-        ? ariaInvalid
+    // WCAG: Determine aria-invalid:
+    // If error exists, aria-invalid evaluates to true unless explicitly overridden
+    const resolvedAriaInvalid: boolean | 'false' | 'true' | 'grammar' | 'spelling' | undefined =
+      ariaInvalidProp !== undefined
+        ? ariaInvalidProp
         : error
-        ? true
+        ? 'true'
         : undefined;
 
-    // Build describedby IDs: combine error, hint, and any user-provided aria-describedby
-    const describedByIds = [
-      error ? errorId : null,
-      hint ? hintId : null,
-      ariaDescribedBy || null,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined;
+    // WCAG: Merge describedby IDs:
+    // Link dynamic error message and hint IDs with any custom IDs passed in aria-describedby
+    const customIds = ariaDescribedByProp
+      ? ariaDescribedByProp.split(/\s+/).filter(Boolean)
+      : [];
+
+    const idsToInclude = [
+      ...(error ? [errorId] : []),
+      ...(hint ? [hintId] : []),
+      ...customIds,
+    ];
+
+    const resolvedAriaDescribedBy =
+      Array.from(new Set(idsToInclude)).join(' ') || undefined;
 
     const resolvedAriaErrorMessage =
-      ariaErrorMessage || (error ? errorId : undefined);
+      ariaErrorMessageProp || (error ? errorId : undefined);
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -77,7 +87,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-required={required ? 'true' : undefined}
             aria-invalid={resolvedAriaInvalid}
             aria-errormessage={resolvedAriaErrorMessage}
-            aria-describedby={describedByIds}
+            aria-describedby={resolvedAriaDescribedBy}
             className={cn(
               'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950',
               icon ? 'pl-9' : '',
@@ -93,7 +103,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={errorId}
             role="alert"
             aria-live="polite"
-            className="text-xs text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1"
+            className="text-xs text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1 font-medium"
           >
             {error}
           </p>

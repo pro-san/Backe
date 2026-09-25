@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { patientSchema, PatientFormData } from '../../lib/validations/patient';
 import { Patient } from '../../types';
 import { Input, Label, Select, DatePicker, Button } from '../ui';
@@ -104,6 +104,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
   const isPending = isLoading || isSubmitting;
   const resolvedSubmitText = submitText || (initialData ? 'Save Changes' : 'Register Patient');
   const todayDateString = new Date().toISOString().split('T')[0];
+  const errorCount = Object.keys(errors).length;
 
   return (
     <form
@@ -112,6 +113,31 @@ export const PatientForm: React.FC<PatientFormProps> = ({
       noValidate
       aria-label="Patient Information Form"
     >
+      {/* WCAG 3.3.1 Error Identification: Dynamic Live Region Error Summary */}
+      {errorCount > 0 && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-200 flex items-start gap-2.5"
+        >
+          <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">
+              Please correct the {errorCount} required field{errorCount > 1 ? 's' : ''} before proceeding:
+            </p>
+            <ul className="mt-1.5 list-disc list-inside space-y-0.5 text-rose-700 dark:text-rose-300">
+              {Object.entries(errors).map(([field, err]) => (
+                <li key={field}>
+                  <a href={`#${field}`} className="underline hover:text-rose-950 dark:hover:text-rose-100 font-medium">
+                    {err?.message as string || `Error in ${field}`}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* SECTION 1: Demographics */}
       <div className="space-y-3">
         <div className="border-b border-slate-200 dark:border-slate-800 pb-1.5">
@@ -127,6 +153,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             placeholder="e.g. John"
             required
             error={errors.first_name?.message}
+            aria-invalid={errors.first_name ? 'true' : 'false'}
+            aria-describedby={errors.first_name ? 'first_name-error' : undefined}
             {...register('first_name')}
           />
           <Input
@@ -135,6 +163,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             placeholder="e.g. Doe"
             required
             error={errors.last_name?.message}
+            aria-invalid={errors.last_name ? 'true' : 'false'}
+            aria-describedby={errors.last_name ? 'last_name-error' : undefined}
             {...register('last_name')}
           />
           <Select
@@ -143,6 +173,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             required
             options={GENDER_OPTIONS}
             error={errors.gender?.message}
+            aria-invalid={errors.gender ? 'true' : 'false'}
+            aria-describedby={errors.gender ? 'gender-error' : undefined}
             {...register('gender')}
           />
         </div>
@@ -154,6 +186,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             required
             max={todayDateString}
             error={errors.date_of_birth?.message}
+            aria-invalid={errors.date_of_birth ? 'true' : 'false'}
+            aria-describedby={errors.date_of_birth ? 'date_of_birth-error' : undefined}
             {...register('date_of_birth')}
           />
           <Select
@@ -161,6 +195,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             label="Blood Group"
             options={BLOOD_GROUPS}
             error={errors.blood_group?.message}
+            aria-invalid={errors.blood_group ? 'true' : 'false'}
+            aria-describedby={errors.blood_group ? 'blood_group-error' : undefined}
             {...register('blood_group')}
           />
           <Select
@@ -168,6 +204,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             label="Marital Status"
             options={MARITAL_STATUS_OPTIONS}
             error={errors.marital_status?.message}
+            aria-invalid={errors.marital_status ? 'true' : 'false'}
+            aria-describedby={errors.marital_status ? 'marital_status-error' : undefined}
             {...register('marital_status')}
           />
         </div>
@@ -190,6 +228,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             hint="7–15 digits"
             required
             error={errors.phone?.message}
+            aria-invalid={errors.phone ? 'true' : 'false'}
+            aria-describedby={errors.phone ? 'phone-error' : undefined}
             {...register('phone')}
           />
           <Input
@@ -200,6 +240,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             hint="Format: name@domain.com"
             required
             error={errors.email?.message}
+            aria-invalid={errors.email ? 'true' : 'false'}
+            aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email')}
           />
         </div>
@@ -210,6 +252,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             label="Residential Address"
             placeholder="Street address, unit/apt, city, zip code"
             error={errors.address?.message}
+            aria-invalid={errors.address ? 'true' : 'false'}
+            aria-describedby={errors.address ? 'address-error' : undefined}
             {...register('address')}
           />
         </div>
@@ -230,6 +274,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             label="Contact Name & Relationship"
             placeholder="e.g. Mary Doe (Spouse)"
             error={errors.emergency_contact?.message}
+            aria-invalid={errors.emergency_contact ? 'true' : 'false'}
+            aria-describedby={errors.emergency_contact ? 'emergency_contact-error' : undefined}
             {...register('emergency_contact')}
           />
           <Input
@@ -238,6 +284,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             type="tel"
             placeholder="+1 (555) 000-0000"
             error={errors.emergency_phone?.message}
+            aria-invalid={errors.emergency_phone ? 'true' : 'false'}
+            aria-describedby={errors.emergency_phone ? 'emergency_phone-error' : undefined}
             {...register('emergency_phone')}
           />
         </div>
@@ -269,7 +317,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
               {...register('allergies')}
             />
             {errors.allergies && (
-              <p id="allergies-error" role="alert" aria-live="polite" className="text-xs text-rose-600 dark:text-rose-400 mt-1">
+              <p id="allergies-error" role="alert" aria-live="polite" className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-medium">
                 {errors.allergies.message}
               </p>
             )}
@@ -292,7 +340,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
               {...register('medical_notes')}
             />
             {errors.medical_notes && (
-              <p id="medical_notes-error" role="alert" aria-live="polite" className="text-xs text-rose-600 dark:text-rose-400 mt-1">
+              <p id="medical_notes-error" role="alert" aria-live="polite" className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-medium">
                 {errors.medical_notes.message}
               </p>
             )}
@@ -308,6 +356,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
           required
           options={STATUS_OPTIONS}
           error={errors.status?.message}
+          aria-invalid={errors.status ? 'true' : 'false'}
+          aria-describedby={errors.status ? 'status-error' : undefined}
           {...register('status')}
         />
       </div>

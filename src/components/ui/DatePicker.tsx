@@ -8,6 +8,9 @@ export interface DatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInpu
   error?: string;
   hint?: string;
   icon?: React.ReactNode;
+  'aria-invalid'?: boolean | 'false' | 'true' | 'grammar' | 'spelling';
+  'aria-describedby'?: string;
+  'aria-errormessage'?: string;
 }
 
 export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
@@ -21,9 +24,9 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
       id,
       name,
       required,
-      'aria-invalid': ariaInvalid,
-      'aria-describedby': ariaDescribedBy,
-      'aria-errormessage': ariaErrorMessage,
+      'aria-invalid': ariaInvalidProp,
+      'aria-describedby': ariaDescribedByProp,
+      'aria-errormessage': ariaErrorMessageProp,
       ...props
     },
     ref
@@ -33,25 +36,30 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
 
-    // Determine aria-invalid: prefer explicit prop, fallback to true if error exists
-    const resolvedAriaInvalid =
-      ariaInvalid !== undefined
-        ? ariaInvalid
+    // WCAG: Determine aria-invalid
+    const resolvedAriaInvalid: boolean | 'false' | 'true' | 'grammar' | 'spelling' | undefined =
+      ariaInvalidProp !== undefined
+        ? ariaInvalidProp
         : error
-        ? true
+        ? 'true'
         : undefined;
 
-    // Build describedby IDs: combine error, hint, and any user-provided aria-describedby
-    const describedByIds = [
-      error ? errorId : null,
-      hint ? hintId : null,
-      ariaDescribedBy || null,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined;
+    // WCAG: Merge describedby IDs
+    const customIds = ariaDescribedByProp
+      ? ariaDescribedByProp.split(/\s+/).filter(Boolean)
+      : [];
+
+    const idsToInclude = [
+      ...(error ? [errorId] : []),
+      ...(hint ? [hintId] : []),
+      ...customIds,
+    ];
+
+    const resolvedAriaDescribedBy =
+      Array.from(new Set(idsToInclude)).join(' ') || undefined;
 
     const resolvedAriaErrorMessage =
-      ariaErrorMessage || (error ? errorId : undefined);
+      ariaErrorMessageProp || (error ? errorId : undefined);
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -77,7 +85,7 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
             aria-required={required ? 'true' : undefined}
             aria-invalid={resolvedAriaInvalid}
             aria-errormessage={resolvedAriaErrorMessage}
-            aria-describedby={describedByIds}
+            aria-describedby={resolvedAriaDescribedBy}
             className={cn(
               'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950 [color-scheme:light] dark:[color-scheme:dark]',
               error
@@ -92,7 +100,7 @@ export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
             id={errorId}
             role="alert"
             aria-live="polite"
-            className="text-xs text-rose-600 dark:text-rose-400 mt-1"
+            className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-medium"
           >
             {error}
           </p>
