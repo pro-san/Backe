@@ -1,26 +1,35 @@
 import React, { useId } from 'react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Label } from './Label';
 
-export interface SelectOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
-
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface DatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
   error?: string;
   hint?: string;
-  options?: SelectOption[];
+  icon?: React.ReactNode;
 }
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, hint, options, children, id, name, required, 'aria-describedby': ariaDescribedBy, ...props }, ref) => {
+export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
+  (
+    {
+      className,
+      label,
+      error,
+      hint,
+      icon,
+      id,
+      name,
+      required,
+      'aria-describedby': ariaDescribedBy,
+      ...props
+    },
+    ref
+  ) => {
     const generatedId = useId();
-    const selectId = id || name || generatedId;
-    const errorId = `${selectId}-error`;
-    const hintId = `${selectId}-hint`;
+    const inputId = id || name || generatedId;
+    const errorId = `${inputId}-error`;
+    const hintId = `${inputId}-hint`;
 
     const describedByIds = [
       error ? errorId : null,
@@ -33,13 +42,20 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full space-y-1.5 text-left">
         {label && (
-          <Label htmlFor={selectId} required={required} error={!!error}>
+          <Label htmlFor={inputId} required={required} error={!!error}>
             {label}
           </Label>
         )}
-        <div className="relative">
-          <select
-            id={selectId}
+        <div className="relative flex items-center">
+          <div
+            className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center w-4 h-4"
+            aria-hidden="true"
+          >
+            {icon || <CalendarIcon className="w-4 h-4" />}
+          </div>
+          <input
+            type="date"
+            id={inputId}
             name={name}
             ref={ref}
             required={required}
@@ -48,22 +64,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             aria-errormessage={error ? errorId : undefined}
             aria-describedby={describedByIds}
             className={cn(
-              'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950',
+              'w-full h-9 rounded-lg border bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-950 [color-scheme:light] dark:[color-scheme:dark]',
               error
                 ? 'border-rose-300 dark:border-rose-700 focus:ring-rose-500 text-rose-900 dark:text-rose-100'
                 : 'border-slate-300 dark:border-slate-700',
               className
             )}
             {...props}
-          >
-            {options
-              ? options.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label}
-                  </option>
-                ))
-              : children}
-          </select>
+          />
         </div>
         {error && (
           <p
@@ -85,5 +93,5 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   }
 );
 
-Select.displayName = 'Select';
-export default Select;
+DatePicker.displayName = 'DatePicker';
+export default DatePicker;
