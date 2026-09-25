@@ -1,0 +1,6 @@
+{
+  "name": "hospital-management-frontend",
+  "description": "Production-ready Hospital Management System frontend with comprehensive clinical workflows, OPD/IPD queues, patient records, pharmacy, laboratory, and billing modules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
