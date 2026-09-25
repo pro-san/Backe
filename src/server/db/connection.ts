@@ -14,7 +14,15 @@ let currentUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hospital_
 let isDbConnected = false;
 let lastError: string | null = null;
 
-// In-memory persistent fallback cache in case MongoDB is offline or connecting
+/**
+ * Checks if the URI contains template placeholder brackets or tokens (e.g., <db_username>)
+ */
+export const isPlaceholderUri = (uri?: string): boolean => {
+  if (!uri) return true;
+  return /<[^>]+>|<db_username>|<password>|username:password/i.test(uri);
+};
+
+// In-memory persistent fallback cache in case MongoDB is offline or in standalone mode
 export const memoryStore = {
   patients: [...INITIAL_PATIENTS],
   doctors: [...INITIAL_DOCTORS],
@@ -49,15 +57,23 @@ export const getDbStatus = async () => {
   // Redact credentials from URI for security
   const safeUri = currentUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
 
+  const statusText = isDbConnected
+    ? 'Connected'
+    : readyState === 2
+    ? 'Connecting'
+    : isPlaceholderUri(currentUri)
+    ? 'In-Memory Active'
+    : 'Disconnected (In-Memory Active)';
+
   return {
     type: 'MongoDB',
     connected: isDbConnected,
     readyState, // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-    statusText: isDbConnected ? 'Connected' : readyState === 2 ? 'Connecting' : 'Disconnected (In-Memory Active)',
+    statusText,
     uri: safeUri,
     database: isDbConnected ? mongoose.connection.name : 'hospital_management',
     collections: counts,
-    lastError,
+    lastError: isPlaceholderUri(currentUri) && !isDbConnected ? null : lastError,
     timestamp: new Date().toISOString(),
   };
 };
@@ -90,13 +106,24 @@ export const seedDatabaseIfEmpty = async () => {
 
     console.log('✅ MongoDB database seeding complete.');
   } catch (err: any) {
-    console.warn('⚠️ Seeding note:', err?.message || err);
+    console.log('Database seeding note:', err?.message || err);
   }
 };
 
 export const connectToMongo = async (customUri?: string): Promise<{ success: boolean; message: string }> => {
   if (customUri) {
     currentUri = customUri;
+  }
+
+  // If URI has unresolved placeholders (e.g., <db_username>), operate in responsive in-memory mode smoothly
+  if (isPlaceholderUri(currentUri)) {
+    isDbConnected = false;
+    lastError = null;
+    console.log('⚡ Operating in high-performance in-memory mode. To link an external MongoDB Atlas cluster, update credentials in the Database connection dialog.');
+    return {
+      success: false,
+      message: 'MongoDB URI contains unreplaced placeholder tokens (e.g. <db_username>). Operating in standalone in-memory mode.',
+    };
   }
 
   try {
@@ -125,7 +152,7 @@ export const connectToMongo = async (customUri?: string): Promise<{ success: boo
     isDbConnected = false;
     const errMsg = err?.message || 'Could not connect to MongoDB server';
     lastError = errMsg;
-    console.warn(`ℹ️ MongoDB connection not available (${errMsg}). The server will operate in responsive in-memory mode until a MongoDB instance is linked.`);
+    console.log(`Database connection notice: ${errMsg}. Operating in responsive in-memory mode.`);
     return {
       success: false,
       message: errMsg,

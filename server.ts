@@ -65,7 +65,7 @@ async function startServer() {
 
   // Connect to MongoDB asynchronously
   connectToMongo().catch((err) => {
-    console.warn('⚠️ Initial MongoDB connection attempt:', err?.message || err);
+    console.log('Database initialization notice:', err?.message || err);
   });
 
   app.listen(PORT, '0.0.0.0', () => {
